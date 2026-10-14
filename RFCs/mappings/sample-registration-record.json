@@ -4,7 +4,7 @@
   "schema_version": "odis.registration.record.v1",
   "record_version": 7,
   "agent_id": "spiffe://trust.example/agent/payments-processor",
-  "valid_until": "2026-10-14T00:00:00.000000Z",
+  "valid_until": "2027-01-14T00:00:00.000000Z",
   "lifecycle_state": "active",
   "sponsor_ref": "urn:example:hr:employee:000123",
   "owner_ref": "urn:example:org:team:payments-platform",
@@ -18,7 +18,7 @@
       "role": "harness-image",
       "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       "media_type": "application/vnd.oci.image.manifest.v1+json",
-      "locator": "registry.example/payments-processor@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      "uri": "oci://registry.example/payments-processor@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
     },
     {
       "ref_type": "software-artifact",
@@ -31,7 +31,8 @@
       "subject_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       "builder_id": "https://github.com/example/payments-processor/.github/workflows/release.yml@refs/heads/main",
       "provenance_uri": "oci://registry.example/payments-processor:sha256-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.att",
-      "transparency_entry_id": "108e9186e8c5677a000000000000000000000000000000000000000000000000"
+      "transparency_entry_id": "108e9186e8c5677a000000000000000000000000000000000000000000000000",
+      "digest": "sha256:5656565656565656565656565656565656565656565656565656565656565656"
     },
     {
       "ref_type": "sbom",
@@ -52,11 +53,15 @@
       "profile": "agentrust-composition-v0",
       "digest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
       "digest_input": "rfc8785-of-extension-object",
-      "locator": "#/extensions/agentrust-composition-v0"
+      "uri": "#/extensions/agentrust-composition-v0"
     }
   ],
   "trust_domain": "trust.example",
-  "policy_profile_ref": "https://policy.example/bundles/payments@3.2.0#sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+  "policy_profile_ref": {
+    "uri": "https://policy.example/bundles/payments@3.2.0",
+    "digest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "enforcement_mode": "enforce"
+  },
   "permitted_delegation_modes": [
     "pre-authorized",
     "out-of-band-approval"
@@ -82,6 +87,20 @@
   },
   "created_at": "2026-06-01T09:00:00.000000Z",
   "updated_at": "2026-10-07T12:00:00.000000Z",
+  "declared_intent": "Reconcile approved invoices against the ledger and queue payments for human release.",
+  "reference_values": [
+    {
+      "evidence_type": "intel-tdx",
+      "measurement": "mrtd",
+      "value": "sha384:343434343434343434343434343434343434343434343434343434343434343434343434343434343434343434343434",
+      "launch_binding": "rtmr3-extends-composition-digest"
+    }
+  ],
+  "evidence_requirements": {
+    "instance_to_software": "platform-asserted",
+    "instance_to_key": "hardware-bound",
+    "max_evidence_age_seconds": 300
+  },
   "extensions": {
     "agentrust-composition-v0": {
       "crypto_profile": "standard",
@@ -89,9 +108,6 @@
         "record_digest_input": "exact-issued-payload",
         "canonical_profile": "rfc8785",
         "null_handling": "preserve"
-      },
-      "intent": {
-        "statement": "Reconcile approved invoices against the ledger and queue payments for human release."
       },
       "system_prompt": {
         "hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
@@ -111,10 +127,8 @@
         }
       },
       "policy_bundle": {
-        "hash": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
         "policy_language": "cedar",
         "version": "3.2.0",
-        "enforcement_mode": "enforce",
         "scope": [
           "finance:ledger:write"
         ]
@@ -205,16 +219,6 @@
         "entry_count": 120488,
         "first_entry_at": "2026-06-01T09:05:00Z",
         "last_entry_at": "2026-10-07T11:59:00Z"
-      },
-      "reference_values": {
-        "platform": "intel-tdx",
-        "mrtd": "sha384:343434343434343434343434343434343434343434343434343434343434343434343434343434343434343434343434",
-        "launch_binding": "rtmr3-extends-composition-digest",
-        "required_assurance": {
-          "instance_to_software": "platform-asserted",
-          "instance_to_key": "hardware-bound"
-        },
-        "max_evidence_age_seconds": 300
       },
       "human_oversight": {
         "required": true,

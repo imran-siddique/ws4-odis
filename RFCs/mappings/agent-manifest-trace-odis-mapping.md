@@ -4,6 +4,8 @@ Date: 2026-10-07
 Status: draft for WS4 discussion ahead of the 2026-10-14 call. Not a proposal for adoption; field fits are open to dispute.
 Follows the 2026-10-07 WS4 call, which agreed to fold Agent Manifest into the ODIS Agent Registration Record and to start from a sample record (see ws4-secure-design-agentic-systems discussion #209). Sample record: [sample-registration-record.json](sample-registration-record.json).
 
+Updated 2026-10-14, after the call agreed the merge: the sample record now uses the optional 6.1 fields proposed in #38, and the two sections that describe it are revised to match. The mapping tables are unchanged and still describe ODIS at `148dc41`.
+
 ## Sources
 
 Every field claim below cites one of these keys plus a section number. All were read at the pinned commit, not from a local clone.
@@ -169,13 +171,13 @@ File: [sample-registration-record.json](sample-registration-record.json). It par
 
 How it is laid out:
 
-- Top level: only ODIS 6.1 field names, plus one `extensions` object. `record_id`, `record_issuer`, `schema_version`, `record_version`, `agent_id`, `valid_until`, `lifecycle_state`, `sponsor_ref`, `owner_ref`, `approved_runtime_issuers`, `approved_software_refs`, `trust_domain`, `policy_profile_ref`, `permitted_delegation_modes`, `provider_entitlements`, `created_at`, `updated_at` are all present.
-- `approved_software_refs` holds six typed entries: harness image, base image, SLSA provenance, SBOM (`integrity_use: inventory-only`, per ODIS-L1-02), source bundle, and one `composition` entry whose digest covers the profile extension.
-- `extensions.agentrust-composition-v0` is the clearly marked profile. It carries everything AM intended with no 6.1 home: prompt with `assurance_test`, policy bundle with `enforcement_mode`, model identity with weights digest, tool catalog with definition digests and tool servers, RAG corpus with `poisoning_scan.subject_digest`, memory baseline, audit commitment, reference values, human oversight, governance, and the regulatory blocks.
-- `policy_profile_ref` stays a string because ODIS types it that way; the digest rides in a URI fragment as a stopgap. The proposed core change makes it an object.
+- Top level: the ODIS 6.1 fields, the three optional fields proposed in #38 (`declared_intent`, `reference_values`, `evidence_requirements`), and one `extensions` object. `record_id`, `record_issuer`, `schema_version`, `record_version`, `agent_id`, `valid_until`, `lifecycle_state`, `sponsor_ref`, `owner_ref`, `approved_runtime_issuers`, `approved_software_refs`, `trust_domain`, `policy_profile_ref`, `permitted_delegation_modes`, `provider_entitlements`, `created_at`, `updated_at` are all present.
+- `approved_software_refs` holds six typed entries, each with the `ref_type` and `digest` that #38 6.1.1 requires: harness image, base image, SLSA provenance, SBOM (`integrity_use: inventory-only`, per ODIS-L1-02), source bundle, and one `composition` entry whose digest covers the profile extension.
+- `extensions.agentrust-composition-v0` is the clearly marked profile. It carries the AM content that #38 leaves to profiles: prompt with `assurance_test`, policy language and scope, model identity with weights digest, tool catalog with definition digests and tool servers, RAG corpus with `poisoning_scan.subject_digest`, memory baseline, audit commitment, human oversight, governance, and the regulatory blocks.
+- `policy_profile_ref` uses the object form proposed in #38: `uri`, `digest` and `enforcement_mode`. The 2026-10-07 version kept it a string, with the digest in a URI fragment.
 - AM fields left out deliberately: `safety_level` (not evidence, per AM 3.2.1), `attestation` (evidence, belongs in 6.2), `delegation_chain` (belongs in 6.3), `agent_instance_id` (belongs in 6.2), `signature` and `transparency_log_entry` (carrier).
 
-**Binding note.** AM extends the manifest hash into `RTMR[3]` or `HOST_DATA` at launch. The record cannot carry its own expected digest, and binding the whole record digest at launch would break rithikha's rule 3: a sponsor or owner change bumps `record_version`, the launch measurement then names a superseded version, and the instance fails a check that the rule says should pass. The sample therefore binds the **composition digest** at launch (`reference_values.launch_binding: rtmr3-extends-composition-digest`). Ownership changes then leave the hardware binding intact, and composition changes break it, which is the intended behaviour. That binding is evidence for `instance_to_software` only where a measured layer extends it before the workload runs (AM 3.2.8). It says nothing about `instance_to_key`, which needs its own evidence (#21 replay).
+**Binding note.** AM extends the manifest hash into `RTMR[3]` or `HOST_DATA` at launch. The record cannot carry its own expected digest, and binding the whole record digest at launch would break rithikha's rule 3: a sponsor or owner change bumps `record_version`, the launch measurement then names a superseded version, and the instance fails a check that the rule says should pass. The sample therefore binds the **composition digest** at launch (`reference_values[0].launch_binding: rtmr3-extends-composition-digest`). Ownership changes then leave the hardware binding intact, and composition changes break it, which is the intended behaviour. That binding is evidence for `instance_to_software` only where a measured layer extends it before the workload runs (AM 3.2.8). It says nothing about `instance_to_key`, which needs its own evidence (#21 replay).
 
 `canonicalization.null_handling` is set to `preserve`. AM 2.3 omits nulls before JCS. The two cannot both be the default, and #22 asks for the choice to be named.
 
@@ -187,6 +189,10 @@ How it is laid out:
 - root: `additionalProperties: false`. A named profile extension, the meeting's profile switching, has nowhere to go.
 
 `policy_profile_ref` is also a string there, matching ODIS 6.1, so it cannot carry the policy bundle digest or `enforcement_mode` either. If a 6.1 schema is adopted, these three are the decisions it encodes.
+
+Rerun on 2026-10-14. The 7 errors above reproduce against the 2026-10-07 sample. The updated sample gives 8 against the #11 schema: the same seven, with the root error now naming the three new optional fields as well, plus `policy_profile_ref` as an object. Same three decisions.
+
+[registration-record-6.1-check.schema.json](registration-record-6.1-check.schema.json) is the #11 schema with only the #38 changes applied. It is a test aid, not a proposed ODIS schema. [check_sample.py](check_sample.py) validates the sample against it (0 errors), checks that a record with none of the new fields still validates, and checks that eight malformed variants are rejected.
 
 ## Mapping 2: TRACE Trust Record to the ODIS 6.3 Delegation Record
 
@@ -248,4 +254,4 @@ cA2A already emits a TRACE record per hop with `delegation.credential_id` and `p
 
 ## What this does not establish
 
-This mapping is from spec text at the pinned commits. No implementation was run: no Agent Manifest was converted, no sample record was validated against an ODIS schema (none is published), no TRACE record or cA2A chain was checked against 6.3. The JSON sample is checked for well-formedness, digest-string length, and against the #11 schema as above. Fit judgments (exact, partial, gap) are mine and open to dispute, especially the "partial" rows where semantics differ. The AM COSE envelope file was referenced, not re-read for this draft. `evidence_requirements` was read in AM-py only; I did not read `evidence_requirements.py` itself.
+This mapping is from spec text at the pinned commits. No implementation was run: no Agent Manifest was converted, no sample record was validated against an ODIS schema (none is published; the check schema above is mine), no TRACE record or cA2A chain was checked against 6.3. The JSON sample is checked for well-formedness, digest-string length, and against the #11 schema as above. Fit judgments (exact, partial, gap) are mine and open to dispute, especially the "partial" rows where semantics differ. The AM COSE envelope file was referenced, not re-read for this draft. `evidence_requirements` was read in AM-py only; I did not read `evidence_requirements.py` itself.
